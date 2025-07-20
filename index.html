@@ -10,36 +10,30 @@
       background-color: #121212;
       color: #ffffff;
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
       text-align: center;
     }
 
     h1 {
-      font-size: 1.8em;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-      margin-top: 20px;
-    }
-
-    li {
-      background-color: #1e1e1e;
+      font-size: 2em;
       margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      text-align: left;
-      font-size: 0.95em;
+    }
+
+    #status {
+      font-size: 1em;
+      color: #aaa;
     }
 
     .circle {
-      width: 16px;
-      height: 16px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
       background: #4caf50;
-      margin: 20px auto;
+      margin-top: 20px;
       animation: pulse 1.5s infinite;
     }
 
@@ -52,28 +46,14 @@
 </head>
 <body>
   <h1 id="hasil">Memuat...</h1>
+  <div id="status">Menunggu data...</div>
   <div class="circle"></div>
-  <h2>Riwayat (max 10):</h2>
-  <ul id="logList"></ul>
 
   <script>
     let lastValue = null;
-    let log = [];
 
-    // Minta izin notifikasi
     if ("Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission();
-    }
-
-    // Fungsi untuk menampilkan log ke halaman
-    function updateLogDisplay() {
-      const logList = document.getElementById("logList");
-      logList.innerHTML = "";
-      log.forEach((entry, index) => {
-        const li = document.createElement("li");
-        li.textContent = `${index + 1}. ${entry.time} → ${entry.value}`;
-        logList.appendChild(li);
-      });
     }
 
     function fetchData() {
@@ -81,42 +61,30 @@
         .then(res => res.json())
         .then(data => {
           const value = data.value;
-          document.getElementById("hasil").textContent = `Value saat ini: ${value}`;
+          document.getElementById("hasil").textContent = `Value: ${value}`;
+          document.getElementById("status").textContent = `Dari sumber: ${data.source}`;
 
+          // Hanya tampilkan notifikasi jika value BERUBAH
           if (value !== lastValue) {
             lastValue = value;
 
-            const now = new Date();
-            const timeString = now.toLocaleTimeString();
-
-            // Tambahkan ke log
-            log.push({ time: timeString, value: value });
-
-            // Jika sudah lebih dari 10, reset log
-            if (log.length > 10) {
-              log = [];
-              log.push({ time: timeString, value: value }); // mulai lagi dari 1
-            }
-
-            updateLogDisplay();
-
-            // Tampilkan notifikasi
             if (Notification.permission === "granted") {
               new Notification("Data Baru dari API", {
                 body: `Value: ${value}`,
-                icon: "inject-192x192.png"
+                icon: "icon-192x192.png"
               });
             }
           }
         })
         .catch(err => {
           document.getElementById("hasil").textContent = "Gagal mengambil data.";
+          document.getElementById("status").textContent = "Periksa koneksi internet.";
           console.error(err);
         });
     }
 
-    fetchData(); // pertama kali
-    setInterval(fetchData, 5000); // setiap 5 detik
+    fetchData(); // Pertama kali dijalankan
+    setInterval(fetchData, 5000); // Cek setiap 5 detik
   </script>
 </body>
 </html>
