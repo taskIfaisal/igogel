@@ -4,7 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mengintip</title>
-  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000">
+
+  <!-- Manifest inline via JS -->
+  <link rel="manifest" href="data:application/manifest+json,{
+    &quot;name&quot;: &quot;Mengintip&quot;,
+    &quot;short_name&quot;: &quot;Mengintip&quot;,
+    &quot;start_url&quot;: &quot;.&quot;,
+    &quot;display&quot;: &quot;standalone&quot;,
+    &quot;background_color&quot;: &quot;#000000&quot;,
+    &quot;theme_color&quot;: &quot;#000000&quot;,
+    &quot;orientation&quot;: &quot;portrait&quot;,
+    &quot;icons&quot;: []
+  }">
+
   <style>
     html, body {
       margin: 0;
@@ -14,6 +28,7 @@
       height: 100%;
       overflow: hidden;
       touch-action: manipulation;
+      font-family: sans-serif;
     }
     #screen {
       position: fixed;
@@ -33,6 +48,7 @@
       display: none;
       transform: translateY(-50%);
       padding: 0 20px;
+      word-break: break-word;
     }
   </style>
 </head>
@@ -41,31 +57,54 @@
   <div id="peekText">🔍 Mengintip...</div>
 
   <script>
-    let peekValue = '🔍 Mengintip...';
+    let apiValue = "🔍 Mengintip...";
 
-    // Ambil hanya field "value" dari JSON
-    fetch('https://11z.co/_w/6804/selection')
-      .then(response => response.json())
-      .then(data => {
-        if (data && data.value) {
-          peekValue = data.value;
-        }
-      })
-      .catch(error => {
-        console.error('Gagal memuat data:', error);
-      });
+    async function fetchValue() {
+      try {
+        const res = await fetch("https://11z.co/_w/6804/selection");
+        const data = await res.json();
+        if (data.value) apiValue = data.value;
+      } catch (e) {
+        apiValue = "❌ Gagal ambil data";
+      }
+    }
 
     function showPeek() {
-      document.getElementById("peekText").textContent = peekValue;
+      document.getElementById("peekText").textContent = apiValue;
       document.getElementById("peekText").style.display = "block";
     }
 
     function hidePeek() {
       document.getElementById("peekText").style.display = "none";
+      fetchValue(); // ambil lagi saat dilepas
     }
 
+    // Ambil data pertama kali saat masuk
+    fetchValue();
+
+    // PWA Service Worker inline registration
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
+      const swCode = `
+        self.addEventListener('install', e => {
+          e.waitUntil(
+            caches.open('mengintip-cache').then(cache => {
+              return cache.addAll(['.']);
+            })
+          );
+        });
+
+        self.addEventListener('fetch', e => {
+          e.respondWith(
+            caches.match(e.request).then(response => {
+              return response || fetch(e.request);
+            })
+          );
+        });
+      `;
+
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      const swURL = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swURL);
     }
   </script>
 </body>
