@@ -32,20 +32,37 @@
       z-index: 2;
       display: none;
       transform: translateY(-50%);
+      padding: 0 20px;
     }
   </style>
 </head>
 <body ontouchstart="showPeek()" ontouchend="hidePeek()">
   <div id="screen"></div>
   <div id="peekText">🔍 Mengintip...</div>
+
   <script>
+    let peekData = '🔍 Mengintip...'; // Default text
+
+    // Ambil data dari API
+    fetch('https://11z.co/_w/6804/selection')
+      .then(response => response.text())
+      .then(data => {
+        peekData = data.trim();
+      })
+      .catch(error => {
+        console.error('Gagal memuat data:', error);
+      });
+
     function showPeek() {
+      document.getElementById("peekText").textContent = peekData;
       document.getElementById("peekText").style.display = "block";
     }
+
     function hidePeek() {
       document.getElementById("peekText").style.display = "none";
     }
 
+    // Service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
     }
