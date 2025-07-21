@@ -41,20 +41,22 @@
   <div id="peekText">🔍 Mengintip...</div>
 
   <script>
-    let peekData = '🔍 Mengintip...'; // Default text
+    let peekValue = '🔍 Mengintip...';
 
-    // Ambil data dari API
+    // Ambil hanya field "value" dari JSON
     fetch('https://11z.co/_w/6804/selection')
-      .then(response => response.text())
+      .then(response => response.json())
       .then(data => {
-        peekData = data.trim();
+        if (data && data.value) {
+          peekValue = data.value;
+        }
       })
       .catch(error => {
         console.error('Gagal memuat data:', error);
       });
 
     function showPeek() {
-      document.getElementById("peekText").textContent = peekData;
+      document.getElementById("peekText").textContent = peekValue;
       document.getElementById("peekText").style.display = "block";
     }
 
@@ -62,7 +64,6 @@
       document.getElementById("peekText").style.display = "none";
     }
 
-    // Service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
     }
